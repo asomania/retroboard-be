@@ -1,0 +1,6 @@
+@Retroboard.Api_HostAddress = http://localhost:0
+
+GET {{Retroboard.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

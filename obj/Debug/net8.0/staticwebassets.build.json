@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "0KytWGzA5OmR2LKKovHdzABNuHMyqG1D/qUH06Stgpk=",
+  "Source": "Retroboard.Api",
+  "BasePath": "_content/Retroboard.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
