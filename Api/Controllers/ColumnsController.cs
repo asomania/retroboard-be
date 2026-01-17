@@ -44,10 +44,10 @@ public class ColumnsController : ControllerBase
         }
     }
 
-    [HttpPut("api/columns/{id}")]
-    public async Task<IActionResult> UpdateColumn(string id, [FromBody] ColumnUpdateRequest request, CancellationToken cancellationToken)
+    [HttpPut("api/boards/{boardId}/columns/{columnId}")]
+    public async Task<IActionResult> UpdateColumn(string boardId, string columnId, [FromBody] ColumnUpdateRequest request, CancellationToken cancellationToken)
     {
-        var updated = await _columnService.UpdateColumnAsync(id, request, cancellationToken);
+        var updated = await _columnService.UpdateColumnAsync(boardId, columnId, request, cancellationToken);
         if (!updated)
         {
             return NotFound(new ApiErrorResponse("Column not found"));
@@ -56,10 +56,10 @@ public class ColumnsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("api/columns/{id}")]
-    public async Task<IActionResult> DeleteColumn(string id, CancellationToken cancellationToken)
+    [HttpDelete("api/boards/{boardId}/columns/{columnId}")]
+    public async Task<IActionResult> DeleteColumn(string boardId, string columnId, CancellationToken cancellationToken)
     {
-        var deleted = await _columnService.DeleteColumnAsync(id, cancellationToken);
+        var deleted = await _columnService.DeleteColumnAsync(boardId, columnId, cancellationToken);
         if (!deleted)
         {
             return NotFound(new ApiErrorResponse("Column not found"));

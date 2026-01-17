@@ -26,7 +26,7 @@ public class ColumnService : IColumnService
             return null;
         }
 
-        var existing = await _columnRepository.GetByIdAsync(request.Id, cancellationToken);
+        var existing = await _columnRepository.GetByIdAsync(boardId, request.Id, cancellationToken);
         if (existing is not null)
         {
             throw new InvalidOperationException("Column already exists.");
@@ -43,9 +43,9 @@ public class ColumnService : IColumnService
         return MapColumn(column);
     }
 
-    public async Task<bool> UpdateColumnAsync(string id, ColumnUpdateRequest request, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateColumnAsync(string boardId, string columnId, ColumnUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        var column = await _columnRepository.GetByIdAsync(id, cancellationToken);
+        var column = await _columnRepository.GetByIdAsync(boardId, columnId, cancellationToken);
         if (column is null)
         {
             return false;
@@ -56,9 +56,9 @@ public class ColumnService : IColumnService
         return true;
     }
 
-    public async Task<bool> DeleteColumnAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteColumnAsync(string boardId, string columnId, CancellationToken cancellationToken = default)
     {
-        var column = await _columnRepository.GetByIdAsync(id, cancellationToken);
+        var column = await _columnRepository.GetByIdAsync(boardId, columnId, cancellationToken);
         if (column is null)
         {
             return false;

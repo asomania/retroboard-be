@@ -24,12 +24,12 @@ public class ColumnRepository : IColumnRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Column?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public Task<Column?> GetByIdAsync(string boardId, string columnId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Columns
             .Include(column => column.Cards)
                 .ThenInclude(card => card.Comments)
-            .FirstOrDefaultAsync(column => column.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(column => column.BoardId == boardId && column.Id == columnId, cancellationToken);
     }
 
     public async Task AddAsync(Column column, CancellationToken cancellationToken = default)

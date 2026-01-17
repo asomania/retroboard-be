@@ -14,20 +14,20 @@ public class CardRepository : ICardRepository
         _dbContext = dbContext;
     }
 
-    public Task<List<Card>> GetByColumnIdAsync(string columnId, CancellationToken cancellationToken = default)
+    public Task<List<Card>> GetByColumnAsync(string boardId, string columnId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Cards
-            .Where(card => card.ColumnId == columnId)
+            .Where(card => card.BoardId == boardId && card.ColumnId == columnId)
             .Include(card => card.Comments)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Card?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public Task<Card?> GetByIdAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Cards
             .Include(card => card.Comments)
-            .FirstOrDefaultAsync(card => card.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(card => card.BoardId == boardId && card.ColumnId == columnId && card.Id == cardId, cancellationToken);
     }
 
     public async Task AddAsync(Card card, CancellationToken cancellationToken = default)
@@ -48,8 +48,8 @@ public class CardRepository : ICardRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<bool> ColumnExistsAsync(string columnId, CancellationToken cancellationToken = default)
+    public Task<bool> ColumnExistsAsync(string boardId, string columnId, CancellationToken cancellationToken = default)
     {
-        return _dbContext.Columns.AnyAsync(column => column.Id == columnId, cancellationToken);
+        return _dbContext.Columns.AnyAsync(column => column.BoardId == boardId && column.Id == columnId, cancellationToken);
     }
 }

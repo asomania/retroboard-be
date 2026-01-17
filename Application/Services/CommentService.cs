@@ -13,9 +13,9 @@ public class CommentService : ICommentService
         _commentRepository = commentRepository;
     }
 
-    public async Task<IReadOnlyList<CommentResponse>> GetCommentsAsync(string cardId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<CommentResponse>> GetCommentsAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
     {
-        var comments = await _commentRepository.GetByCardIdAsync(cardId, cancellationToken);
+        var comments = await _commentRepository.GetByCardAsync(boardId, columnId, cardId, cancellationToken);
         return comments.Select(comment => new CommentResponse
         {
             Id = comment.Id,
@@ -25,14 +25,14 @@ public class CommentService : ICommentService
         }).ToList();
     }
 
-    public async Task<CommentResponse?> CreateCommentAsync(string cardId, CommentCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<CommentResponse?> CreateCommentAsync(string boardId, string columnId, string cardId, CommentCreateRequest request, CancellationToken cancellationToken = default)
     {
-        if (!await _commentRepository.CardExistsAsync(cardId, cancellationToken))
+        if (!await _commentRepository.CardExistsAsync(boardId, columnId, cardId, cancellationToken))
         {
             return null;
         }
 
-        var existing = await _commentRepository.GetByIdAsync(request.Id, cancellationToken);
+        var existing = await _commentRepository.GetByIdAsync(boardId, columnId, cardId, request.Id, cancellationToken);
         if (existing is not null)
         {
             throw new InvalidOperationException("Comment already exists.");
@@ -44,6 +44,8 @@ public class CommentService : ICommentService
             Author = request.Author,
             Text = request.Text,
             CreatedAt = request.CreatedAt,
+            BoardId = boardId,
+            ColumnId = columnId,
             CardId = cardId
         };
 
@@ -57,9 +59,9 @@ public class CommentService : ICommentService
         };
     }
 
-    public async Task<bool> DeleteCommentAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteCommentAsync(string boardId, string columnId, string cardId, string id, CancellationToken cancellationToken = default)
     {
-        var comment = await _commentRepository.GetByIdAsync(id, cancellationToken);
+        var comment = await _commentRepository.GetByIdAsync(boardId, columnId, cardId, id, cancellationToken);
         if (comment is null)
         {
             return false;

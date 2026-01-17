@@ -41,33 +41,39 @@ public class RetroboardDbContext : DbContext
 
         modelBuilder.Entity<Column>(entity =>
         {
-            entity.HasKey(column => column.Id);
+            entity.HasKey(column => new { column.BoardId, column.Id });
             entity.Property(column => column.Id).ValueGeneratedNever();
             entity.Property(column => column.Title).IsRequired();
+            entity.Property(column => column.BoardId).IsRequired();
             entity.HasMany(column => column.Cards)
                 .WithOne(card => card.Column)
-                .HasForeignKey(card => card.ColumnId)
+                .HasForeignKey(card => new { card.BoardId, card.ColumnId })
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Card>(entity =>
         {
-            entity.HasKey(card => card.Id);
+            entity.HasKey(card => new { card.BoardId, card.ColumnId, card.Id });
             entity.Property(card => card.Id).ValueGeneratedNever();
             entity.Property(card => card.Text).IsRequired();
+            entity.Property(card => card.BoardId).IsRequired();
+            entity.Property(card => card.ColumnId).IsRequired();
             entity.HasMany(card => card.Comments)
                 .WithOne(comment => comment.Card)
-                .HasForeignKey(comment => comment.CardId)
+                .HasForeignKey(comment => new { comment.BoardId, comment.ColumnId, comment.CardId })
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(comment => comment.Id);
+            entity.HasKey(comment => new { comment.BoardId, comment.ColumnId, comment.CardId, comment.Id });
             entity.Property(comment => comment.Id).ValueGeneratedNever();
             entity.Property(comment => comment.Author).IsRequired();
             entity.Property(comment => comment.Text).IsRequired();
             entity.Property(comment => comment.CreatedAt).IsRequired();
+            entity.Property(comment => comment.BoardId).IsRequired();
+            entity.Property(comment => comment.ColumnId).IsRequired();
+            entity.Property(comment => comment.CardId).IsRequired();
         });
     }
 }

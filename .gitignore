@@ -47,8 +47,11 @@ Thumbs.db
 .env
 .env.*
 appsettings.Development.json
-appsettings.Local.json
+appsettings.*.json
+!appsettings.json
 
+DB_SCHEMA.md
+AGENTS.md
 # =========================
 # EF Core
 # =========================

@@ -13,20 +13,20 @@ public class CardService : ICardService
         _cardRepository = cardRepository;
     }
 
-    public async Task<IReadOnlyList<CardResponse>> GetCardsAsync(string columnId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<CardResponse>> GetCardsAsync(string boardId, string columnId, CancellationToken cancellationToken = default)
     {
-        var cards = await _cardRepository.GetByColumnIdAsync(columnId, cancellationToken);
+        var cards = await _cardRepository.GetByColumnAsync(boardId, columnId, cancellationToken);
         return cards.Select(MapCard).ToList();
     }
 
-    public async Task<CardResponse?> CreateCardAsync(string columnId, CardCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<CardResponse?> CreateCardAsync(string boardId, string columnId, CardCreateRequest request, CancellationToken cancellationToken = default)
     {
-        if (!await _cardRepository.ColumnExistsAsync(columnId, cancellationToken))
+        if (!await _cardRepository.ColumnExistsAsync(boardId, columnId, cancellationToken))
         {
             return null;
         }
 
-        var existing = await _cardRepository.GetByIdAsync(request.Id, cancellationToken);
+        var existing = await _cardRepository.GetByIdAsync(boardId, columnId, request.Id, cancellationToken);
         if (existing is not null)
         {
             throw new InvalidOperationException("Card already exists.");
@@ -37,6 +37,7 @@ public class CardService : ICardService
             Id = request.Id,
             Text = request.Text,
             Votes = request.Votes,
+            BoardId = boardId,
             ColumnId = columnId
         };
 
@@ -44,9 +45,9 @@ public class CardService : ICardService
         return MapCard(card);
     }
 
-    public async Task<bool> UpdateCardAsync(string id, CardUpdateRequest request, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateCardAsync(string boardId, string columnId, string cardId, CardUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        var card = await _cardRepository.GetByIdAsync(id, cancellationToken);
+        var card = await _cardRepository.GetByIdAsync(boardId, columnId, cardId, cancellationToken);
         if (card is null)
         {
             return false;
@@ -58,9 +59,9 @@ public class CardService : ICardService
         return true;
     }
 
-    public async Task<bool> DeleteCardAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteCardAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
     {
-        var card = await _cardRepository.GetByIdAsync(id, cancellationToken);
+        var card = await _cardRepository.GetByIdAsync(boardId, columnId, cardId, cancellationToken);
         if (card is null)
         {
             return false;

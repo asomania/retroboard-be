@@ -14,18 +14,18 @@ public class CommentRepository : ICommentRepository
         _dbContext = dbContext;
     }
 
-    public Task<List<Comment>> GetByCardIdAsync(string cardId, CancellationToken cancellationToken = default)
+    public Task<List<Comment>> GetByCardAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Comments
-            .Where(comment => comment.CardId == cardId)
+            .Where(comment => comment.BoardId == boardId && comment.ColumnId == columnId && comment.CardId == cardId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Comment?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public Task<Comment?> GetByIdAsync(string boardId, string columnId, string cardId, string id, CancellationToken cancellationToken = default)
     {
         return _dbContext.Comments
-            .FirstOrDefaultAsync(comment => comment.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(comment => comment.BoardId == boardId && comment.ColumnId == columnId && comment.CardId == cardId && comment.Id == id, cancellationToken);
     }
 
     public async Task AddAsync(Comment comment, CancellationToken cancellationToken = default)
@@ -40,8 +40,8 @@ public class CommentRepository : ICommentRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<bool> CardExistsAsync(string cardId, CancellationToken cancellationToken = default)
+    public Task<bool> CardExistsAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
     {
-        return _dbContext.Cards.AnyAsync(card => card.Id == cardId, cancellationToken);
+        return _dbContext.Cards.AnyAsync(card => card.BoardId == boardId && card.ColumnId == columnId && card.Id == cardId, cancellationToken);
     }
 }
