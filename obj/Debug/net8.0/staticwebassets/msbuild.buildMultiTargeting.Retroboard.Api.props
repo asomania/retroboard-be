@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/Retroboard.Api.props" />
-</Project>

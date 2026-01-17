@@ -1,3 +1,77 @@
-AGENTS.md
-appsettings.json
+# =========================
+# .NET build outputs
+# =========================
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Rider / JetBrains
+# =========================
+.idea/
+*.sln.iml
+
+# =========================
+# VS Code
+# =========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Environment / secrets
+# =========================
+.env
+.env.*
 appsettings.Development.json
+appsettings.Local.json
+
+# =========================
+# EF Core
+# =========================
+Migrations/*.Designer.cs
+Migrations/*.csproj.user
+
+# =========================
+# Test results
+# =========================
+TestResults/
+
+# =========================
+# Publish output
+# =========================
+publish/
+wwwroot/dist/
+
+# =========================
+# Large / binary files
+# =========================
+*.bin
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
