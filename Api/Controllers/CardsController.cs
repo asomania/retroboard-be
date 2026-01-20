@@ -17,25 +17,25 @@ public class CardsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet("api/boards/{boardId}/columns/{columnId}/cards")]
-    public async Task<ActionResult<IReadOnlyList<CardResponse>>> GetCards(string boardId, string columnId, CancellationToken cancellationToken)
+    [HttpGet("api/cards")]
+    public async Task<ActionResult<IReadOnlyList<CardResponse>>> GetCards([FromQuery] string boardId, [FromQuery] string columnId, CancellationToken cancellationToken)
     {
         var cards = await _cardService.GetCardsAsync(boardId, columnId, cancellationToken);
         return Ok(cards);
     }
 
-    [HttpPost("api/boards/{boardId}/columns/{columnId}/cards")]
-    public async Task<ActionResult<CardResponse>> CreateCard(string boardId, string columnId, [FromBody] CardCreateRequest request, CancellationToken cancellationToken)
+    [HttpPost("api/cards")]
+    public async Task<ActionResult<CardResponse>> CreateCard([FromBody] CardCreateRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var card = await _cardService.CreateCardAsync(boardId, columnId, request, cancellationToken);
+            var card = await _cardService.CreateCardAsync(request.BoardId, request.ColumnId, request, cancellationToken);
             if (card is null)
             {
                 return NotFound(new ApiErrorResponse("Column not found"));
             }
 
-            return CreatedAtAction(nameof(GetCards), new { boardId, columnId }, card);
+            return CreatedAtAction(nameof(GetCards), new { boardId = request.BoardId, columnId = request.ColumnId }, card);
         }
         catch (InvalidOperationException ex)
         {
@@ -44,10 +44,10 @@ public class CardsController : ControllerBase
         }
     }
 
-    [HttpPut("api/boards/{boardId}/columns/{columnId}/cards/{cardId}")]
-    public async Task<IActionResult> UpdateCard(string boardId, string columnId, string cardId, [FromBody] CardUpdateRequest request, CancellationToken cancellationToken)
+    [HttpPut("api/cards/{cardId}")]
+    public async Task<IActionResult> UpdateCard(string cardId, [FromBody] CardUpdateRequest request, CancellationToken cancellationToken)
     {
-        var updated = await _cardService.UpdateCardAsync(boardId, columnId, cardId, request, cancellationToken);
+        var updated = await _cardService.UpdateCardAsync(request.BoardId, request.ColumnId, cardId, request, cancellationToken);
         if (!updated)
         {
             return NotFound(new ApiErrorResponse("Card not found"));
@@ -56,8 +56,8 @@ public class CardsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("api/boards/{boardId}/columns/{columnId}/cards/{cardId}")]
-    public async Task<IActionResult> DeleteCard(string boardId, string columnId, string cardId, CancellationToken cancellationToken)
+    [HttpDelete("api/cards/{cardId}")]
+    public async Task<IActionResult> DeleteCard(string cardId, [FromQuery] string boardId, [FromQuery] string columnId, CancellationToken cancellationToken)
     {
         var deleted = await _cardService.DeleteCardAsync(boardId, columnId, cardId, cancellationToken);
         if (!deleted)

@@ -17,25 +17,25 @@ public class ColumnsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet("api/boards/{boardId}/columns")]
-    public async Task<ActionResult<IReadOnlyList<ColumnResponse>>> GetColumns(string boardId, CancellationToken cancellationToken)
+    [HttpGet("api/columns")]
+    public async Task<ActionResult<IReadOnlyList<ColumnResponse>>> GetColumns([FromQuery] string boardId, CancellationToken cancellationToken)
     {
         var columns = await _columnService.GetColumnsAsync(boardId, cancellationToken);
         return Ok(columns);
     }
 
-    [HttpPost("api/boards/{boardId}/columns")]
-    public async Task<ActionResult<ColumnResponse>> CreateColumn(string boardId, [FromBody] ColumnCreateRequest request, CancellationToken cancellationToken)
+    [HttpPost("api/columns")]
+    public async Task<ActionResult<ColumnResponse>> CreateColumn([FromBody] ColumnCreateRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var column = await _columnService.CreateColumnAsync(boardId, request, cancellationToken);
+            var column = await _columnService.CreateColumnAsync(request.BoardId, request, cancellationToken);
             if (column is null)
             {
                 return NotFound(new ApiErrorResponse("Board not found"));
             }
 
-            return CreatedAtAction(nameof(GetColumns), new { boardId }, column);
+            return CreatedAtAction(nameof(GetColumns), new { boardId = request.BoardId }, column);
         }
         catch (InvalidOperationException ex)
         {
@@ -44,10 +44,10 @@ public class ColumnsController : ControllerBase
         }
     }
 
-    [HttpPut("api/boards/{boardId}/columns/{columnId}")]
-    public async Task<IActionResult> UpdateColumn(string boardId, string columnId, [FromBody] ColumnUpdateRequest request, CancellationToken cancellationToken)
+    [HttpPut("api/columns/{columnId}")]
+    public async Task<IActionResult> UpdateColumn(string columnId, [FromBody] ColumnUpdateRequest request, CancellationToken cancellationToken)
     {
-        var updated = await _columnService.UpdateColumnAsync(boardId, columnId, request, cancellationToken);
+        var updated = await _columnService.UpdateColumnAsync(request.BoardId, columnId, request, cancellationToken);
         if (!updated)
         {
             return NotFound(new ApiErrorResponse("Column not found"));
@@ -56,8 +56,8 @@ public class ColumnsController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("api/boards/{boardId}/columns/{columnId}")]
-    public async Task<IActionResult> DeleteColumn(string boardId, string columnId, CancellationToken cancellationToken)
+    [HttpDelete("api/columns/{columnId}")]
+    public async Task<IActionResult> DeleteColumn(string columnId, [FromQuery] string boardId, CancellationToken cancellationToken)
     {
         var deleted = await _columnService.DeleteColumnAsync(boardId, columnId, cancellationToken);
         if (!deleted)

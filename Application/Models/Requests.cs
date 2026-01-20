@@ -34,6 +34,9 @@ public class BoardUpdateRequest
 public class ColumnCreateRequest
 {
     [Required]
+    public string BoardId { get; set; } = string.Empty;
+
+    [Required]
     public string Id { get; set; } = string.Empty;
 
     [Required]
@@ -43,11 +46,20 @@ public class ColumnCreateRequest
 public class ColumnUpdateRequest
 {
     [Required]
+    public string BoardId { get; set; } = string.Empty;
+
+    [Required]
     public string Title { get; set; } = string.Empty;
 }
 
 public class CardCreateRequest
 {
+    [Required]
+    public string BoardId { get; set; } = string.Empty;
+
+    [Required]
+    public string ColumnId { get; set; } = string.Empty;
+
     [Required]
     public string Id { get; set; } = string.Empty;
 
@@ -60,6 +72,12 @@ public class CardCreateRequest
 public class CardUpdateRequest
 {
     [Required]
+    public string BoardId { get; set; } = string.Empty;
+
+    [Required]
+    public string ColumnId { get; set; } = string.Empty;
+
+    [Required]
     public string Text { get; set; } = string.Empty;
 
     public int Votes { get; set; }
@@ -67,6 +85,15 @@ public class CardUpdateRequest
 
 public class CommentCreateRequest
 {
+    [Required]
+    public string BoardId { get; set; } = string.Empty;
+
+    [Required]
+    public string ColumnId { get; set; } = string.Empty;
+
+    [Required]
+    public string CardId { get; set; } = string.Empty;
+
     [Required]
     public string Id { get; set; } = string.Empty;
 

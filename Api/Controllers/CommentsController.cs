@@ -17,25 +17,25 @@ public class CommentsController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet("api/boards/{boardId}/columns/{columnId}/cards/{cardId}/comments")]
-    public async Task<ActionResult<IReadOnlyList<CommentResponse>>> GetComments(string boardId, string columnId, string cardId, CancellationToken cancellationToken)
+    [HttpGet("api/comments")]
+    public async Task<ActionResult<IReadOnlyList<CommentResponse>>> GetComments([FromQuery] string boardId, [FromQuery] string columnId, [FromQuery] string cardId, CancellationToken cancellationToken)
     {
         var comments = await _commentService.GetCommentsAsync(boardId, columnId, cardId, cancellationToken);
         return Ok(comments);
     }
 
-    [HttpPost("api/boards/{boardId}/columns/{columnId}/cards/{cardId}/comments")]
-    public async Task<ActionResult<CommentResponse>> CreateComment(string boardId, string columnId, string cardId, [FromBody] CommentCreateRequest request, CancellationToken cancellationToken)
+    [HttpPost("api/comments")]
+    public async Task<ActionResult<CommentResponse>> CreateComment([FromBody] CommentCreateRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var comment = await _commentService.CreateCommentAsync(boardId, columnId, cardId, request, cancellationToken);
+            var comment = await _commentService.CreateCommentAsync(request.BoardId, request.ColumnId, request.CardId, request, cancellationToken);
             if (comment is null)
             {
                 return NotFound(new ApiErrorResponse("Card not found"));
             }
 
-            return CreatedAtAction(nameof(GetComments), new { boardId, columnId, cardId }, comment);
+            return CreatedAtAction(nameof(GetComments), new { boardId = request.BoardId, columnId = request.ColumnId, cardId = request.CardId }, comment);
         }
         catch (InvalidOperationException ex)
         {
@@ -44,8 +44,8 @@ public class CommentsController : ControllerBase
         }
     }
 
-    [HttpDelete("api/boards/{boardId}/columns/{columnId}/cards/{cardId}/comments/{id}")]
-    public async Task<IActionResult> DeleteComment(string boardId, string columnId, string cardId, string id, CancellationToken cancellationToken)
+    [HttpDelete("api/comments/{id}")]
+    public async Task<IActionResult> DeleteComment(string id, [FromQuery] string boardId, [FromQuery] string columnId, [FromQuery] string cardId, CancellationToken cancellationToken)
     {
         var deleted = await _commentService.DeleteCommentAsync(boardId, columnId, cardId, id, cancellationToken);
         if (!deleted)

@@ -50,7 +50,13 @@ public class BoardService : IBoardService
             Participants = request.Participants.Select(name => new Participant
             {
                 Name = name
-            }).ToList()
+            }).ToList(),
+            Columns = new List<Column>
+            {
+                new() { Id = "start", Title = "Start", BoardId = request.Id },
+                new() { Id = "stop", Title = "Stop", BoardId = request.Id },
+                new() { Id = "continue", Title = "Continue", BoardId = request.Id }
+            }
         };
 
         await _boardRepository.AddAsync(board, cancellationToken);
