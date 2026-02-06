@@ -6,6 +6,7 @@ using Retroboard.Api.Application.Interfaces;
 using Retroboard.Api.Application.Services;
 using Retroboard.Api.Infrastructure.Data;
 using Retroboard.Api.Infrastructure.Repositories;
+using Retroboard.Api.Api.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,10 @@ builder.Services.AddScoped<IBoardService, BoardService>();
 builder.Services.AddScoped<IColumnService, ColumnService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+
+builder.Services.AddSingleton<BoardEventStream>();
+builder.Services.AddSingleton<IBoardEventPublisher>(sp => sp.GetRequiredService<BoardEventStream>());
+builder.Services.AddSingleton<IBoardEventStream>(sp => sp.GetRequiredService<BoardEventStream>());
 
 var app = builder.Build();
 

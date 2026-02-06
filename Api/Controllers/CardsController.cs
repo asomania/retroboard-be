@@ -47,7 +47,7 @@ public class CardsController : ControllerBase
     [HttpPut("api/cards/{cardId}")]
     public async Task<IActionResult> UpdateCard(string cardId, [FromBody] CardUpdateRequest request, CancellationToken cancellationToken)
     {
-        var updated = await _cardService.UpdateCardAsync(request.BoardId, request.ColumnId, cardId, request, cancellationToken);
+        var updated = await _cardService.UpdateCardAsync(request.BoardId, cardId, request, cancellationToken);
         if (!updated)
         {
             return NotFound(new ApiErrorResponse("Card not found"));
@@ -57,9 +57,9 @@ public class CardsController : ControllerBase
     }
 
     [HttpDelete("api/cards/{cardId}")]
-    public async Task<IActionResult> DeleteCard(string cardId, [FromQuery] string boardId, [FromQuery] string columnId, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteCard(string cardId, [FromQuery] string boardId, CancellationToken cancellationToken)
     {
-        var deleted = await _cardService.DeleteCardAsync(boardId, columnId, cardId, cancellationToken);
+        var deleted = await _cardService.DeleteCardAsync(boardId, cardId, cancellationToken);
         if (!deleted)
         {
             return NotFound(new ApiErrorResponse("Card not found"));

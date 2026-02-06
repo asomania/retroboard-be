@@ -23,11 +23,11 @@ public class CardRepository : ICardRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Card?> GetByIdAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
+    public Task<Card?> GetByIdAsync(string boardId, string cardId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Cards
             .Include(card => card.Comments)
-            .FirstOrDefaultAsync(card => card.BoardId == boardId && card.ColumnId == columnId && card.Id == cardId, cancellationToken);
+            .FirstOrDefaultAsync(card => card.BoardId == boardId && card.Id == cardId, cancellationToken);
     }
 
     public async Task AddAsync(Card card, CancellationToken cancellationToken = default)

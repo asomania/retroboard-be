@@ -7,10 +7,12 @@ namespace Retroboard.Api.Application.Services;
 public class CommentService : ICommentService
 {
     private readonly ICommentRepository _commentRepository;
+    private readonly IBoardEventPublisher _eventPublisher;
 
-    public CommentService(ICommentRepository commentRepository)
+    public CommentService(ICommentRepository commentRepository, IBoardEventPublisher eventPublisher)
     {
         _commentRepository = commentRepository;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<IReadOnlyList<CommentResponse>> GetCommentsAsync(string boardId, string columnId, string cardId, CancellationToken cancellationToken = default)
@@ -50,6 +52,23 @@ public class CommentService : ICommentService
         };
 
         await _commentRepository.AddAsync(comment, cancellationToken);
+
+        await _eventPublisher.PublishAsync(new BoardEvent
+        {
+            Type = "comment.created",
+            BoardId = boardId,
+            Data = new CommentCreatedEventData
+            {
+                CommentId = comment.Id,
+                CardId = comment.CardId,
+                ColumnId = comment.ColumnId,
+                Author = comment.Author,
+                Text = comment.Text,
+                CreatedAt = comment.CreatedAt
+            },
+            Ts = DateTime.UtcNow
+        }, cancellationToken);
+
         return new CommentResponse
         {
             Id = comment.Id,
@@ -68,6 +87,20 @@ public class CommentService : ICommentService
         }
 
         await _commentRepository.DeleteAsync(comment, cancellationToken);
+
+        await _eventPublisher.PublishAsync(new BoardEvent
+        {
+            Type = "comment.deleted",
+            BoardId = boardId,
+            Data = new CommentDeletedEventData
+            {
+                CommentId = comment.Id,
+                CardId = comment.CardId,
+                ColumnId = comment.ColumnId
+            },
+            Ts = DateTime.UtcNow
+        }, cancellationToken);
+
         return true;
     }
 }
