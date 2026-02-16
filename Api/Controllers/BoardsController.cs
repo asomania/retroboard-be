@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Retroboard.Api.Api.Models;
 using Retroboard.Api.Application.Interfaces;
 using Retroboard.Api.Application.Models;
@@ -40,9 +41,15 @@ public class BoardsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<BoardDetailResponse>> CreateBoard([FromBody] BoardCreateRequest request, CancellationToken cancellationToken)
     {
+        var currentUserId = ResolveCurrentUserId();
+        if (string.IsNullOrWhiteSpace(currentUserId))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         try
         {
-            var board = await _boardService.CreateBoardAsync(request, cancellationToken);
+            var board = await _boardService.CreateBoardAsync(request, currentUserId, cancellationToken);
             return CreatedAtAction(nameof(GetBoardById), new { id = board.Id }, board);
         }
         catch (InvalidOperationException ex)
@@ -55,10 +62,24 @@ public class BoardsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBoard(string id, [FromBody] BoardUpdateRequest request, CancellationToken cancellationToken)
     {
-        var updated = await _boardService.UpdateBoardAsync(id, request, cancellationToken);
-        if (!updated)
+        var currentUserId = ResolveCurrentUserId();
+        if (string.IsNullOrWhiteSpace(currentUserId))
         {
-            return NotFound(new ApiErrorResponse("Board not found"));
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
+        try
+        {
+            var updated = await _boardService.UpdateBoardAsync(id, request, currentUserId, cancellationToken);
+            if (!updated)
+            {
+                return NotFound(new ApiErrorResponse("Board not found"));
+            }
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized board update attempt. BoardId: {BoardId}, UserId: {UserId}", id, currentUserId);
+            return StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse("Only board owner can update board settings"));
         }
 
         return NoContent();
@@ -67,12 +88,42 @@ public class BoardsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBoard(string id, CancellationToken cancellationToken)
     {
-        var deleted = await _boardService.DeleteBoardAsync(id, cancellationToken);
-        if (!deleted)
+        var currentUserId = ResolveCurrentUserId();
+        if (string.IsNullOrWhiteSpace(currentUserId))
         {
-            return NotFound(new ApiErrorResponse("Board not found"));
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
+        try
+        {
+            var deleted = await _boardService.DeleteBoardAsync(id, currentUserId, cancellationToken);
+            if (!deleted)
+            {
+                return NotFound(new ApiErrorResponse("Board not found"));
+            }
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized board delete attempt. BoardId: {BoardId}, UserId: {UserId}", id, currentUserId);
+            return StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse("Only board owner can delete board"));
         }
 
         return NoContent();
+    }
+
+    private string? ResolveCurrentUserId()
+    {
+        var claimUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!string.IsNullOrWhiteSpace(claimUserId))
+        {
+            return claimUserId;
+        }
+
+        if (Request.Headers.TryGetValue("X-User-Id", out var headerUserId) && !string.IsNullOrWhiteSpace(headerUserId))
+        {
+            return headerUserId.ToString();
+        }
+
+        return null;
     }
 }

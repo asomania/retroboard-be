@@ -79,8 +79,21 @@ public class CardUpdateRequest
 
     [Required]
     public string Text { get; set; } = string.Empty;
+}
 
-    public int Votes { get; set; }
+public class CardMoveRequest
+{
+    [Required]
+    public string BoardId { get; set; } = string.Empty;
+
+    [Required]
+    public string ToColumnId { get; set; } = string.Empty;
+}
+
+public class CardLikeRequest
+{
+    [Required]
+    public string BoardId { get; set; } = string.Empty;
 }
 
 public class CommentCreateRequest

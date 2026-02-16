@@ -72,4 +72,13 @@ app.UseCors("AllowAll");
 
 app.MapControllers();
 
-app.Run();
+var commandLine = string.Join(' ', Environment.GetCommandLineArgs());
+var isEfDesignTime =
+    AppDomain.CurrentDomain.GetData("EF.IsDesignTime") as bool? == true ||
+    commandLine.Contains("ef.dll", StringComparison.OrdinalIgnoreCase) ||
+    commandLine.Contains("dotnet-ef", StringComparison.OrdinalIgnoreCase);
+var isEfMigrationEnvironment = string.Equals(app.Environment.EnvironmentName, "EfMigration", StringComparison.OrdinalIgnoreCase);
+if (!isEfDesignTime && !isEfMigrationEnvironment)
+{
+    app.Run();
+}

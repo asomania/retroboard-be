@@ -15,6 +15,7 @@ public class RetroboardDbContext : DbContext
     public DbSet<Column> Columns => Set<Column>();
     public DbSet<Card> Cards => Set<Card>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<Like> Likes => Set<Like>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,7 @@ public class RetroboardDbContext : DbContext
             entity.HasKey(board => board.Id);
             entity.Property(board => board.Id).ValueGeneratedNever();
             entity.Property(board => board.Name).IsRequired();
+            entity.Property(board => board.CreatedByUserId).IsRequired();
             entity.HasMany(board => board.Participants)
                 .WithOne(participant => participant.Board)
                 .HasForeignKey(participant => participant.BoardId)
@@ -74,6 +76,16 @@ public class RetroboardDbContext : DbContext
             entity.Property(comment => comment.BoardId).IsRequired();
             entity.Property(comment => comment.ColumnId).IsRequired();
             entity.Property(comment => comment.CardId).IsRequired();
+        });
+
+        modelBuilder.Entity<Like>(entity =>
+        {
+            entity.HasKey(like => new { like.CardId, like.UserId });
+            entity.Property(like => like.BoardId).IsRequired().HasMaxLength(450);
+            entity.Property(like => like.CardId).IsRequired().HasMaxLength(450);
+            entity.Property(like => like.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(like => like.CreatedAt).IsRequired();
+            entity.HasIndex(like => like.BoardId);
         });
     }
 }

@@ -23,6 +23,7 @@ public class BoardService : IBoardService
                 Name = board.Name,
                 Date = board.Date,
                 InviteRequired = board.InviteRequired,
+                CreatedByUserId = board.CreatedByUserId,
                 ParticipantsCount = board.Participants.Count
             })
             .ToList();
@@ -34,7 +35,7 @@ public class BoardService : IBoardService
         return board is null ? null : MapBoardDetail(board);
     }
 
-    public async Task<BoardDetailResponse> CreateBoardAsync(BoardCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<BoardDetailResponse> CreateBoardAsync(BoardCreateRequest request, string currentUserId, CancellationToken cancellationToken = default)
     {
         if (await _boardRepository.ExistsAsync(request.Id, cancellationToken))
         {
@@ -47,6 +48,7 @@ public class BoardService : IBoardService
             Name = request.Name,
             Date = request.Date,
             InviteRequired = request.InviteRequired,
+            CreatedByUserId = currentUserId,
             Participants = request.Participants.Select(name => new Participant
             {
                 Name = name
@@ -63,12 +65,17 @@ public class BoardService : IBoardService
         return MapBoardDetail(board);
     }
 
-    public async Task<bool> UpdateBoardAsync(string id, BoardUpdateRequest request, CancellationToken cancellationToken = default)
+    public async Task<bool> UpdateBoardAsync(string id, BoardUpdateRequest request, string currentUserId, CancellationToken cancellationToken = default)
     {
         var board = await _boardRepository.GetByIdAsync(id, includeDetails: false, cancellationToken);
         if (board is null)
         {
             return false;
+        }
+
+        if (board.CreatedByUserId != currentUserId)
+        {
+            throw new UnauthorizedAccessException("Only board owner can update board settings.");
         }
 
         board.Name = request.Name;
@@ -84,12 +91,17 @@ public class BoardService : IBoardService
         return true;
     }
 
-    public async Task<bool> DeleteBoardAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteBoardAsync(string id, string currentUserId, CancellationToken cancellationToken = default)
     {
         var board = await _boardRepository.GetByIdAsync(id, includeDetails: false, cancellationToken);
         if (board is null)
         {
             return false;
+        }
+
+        if (board.CreatedByUserId != currentUserId)
+        {
+            throw new UnauthorizedAccessException("Only board owner can delete board.");
         }
 
         await _boardRepository.DeleteAsync(board, cancellationToken);
@@ -104,6 +116,7 @@ public class BoardService : IBoardService
             Name = board.Name,
             Date = board.Date,
             InviteRequired = board.InviteRequired,
+            CreatedByUserId = board.CreatedByUserId,
             Participants = board.Participants.Select(participant => participant.Name).ToList(),
             Columns = board.Columns.Select(column => new ColumnResponse
             {

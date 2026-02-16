@@ -27,6 +27,10 @@ namespace Retroboard.Api.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
@@ -110,6 +114,28 @@ namespace Retroboard.Api.Migrations
                     b.HasKey("BoardId", "ColumnId", "CardId", "Id");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Retroboard.Api.Domain.Entities.Like", b =>
+                {
+                    b.Property<string>("CardId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BoardId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("CardId", "UserId");
+
+                    b.HasIndex("BoardId");
+
+                    b.ToTable("Likes");
                 });
 
             modelBuilder.Entity("Retroboard.Api.Domain.Entities.Participant", b =>

@@ -15,10 +15,16 @@ public class CardService : ICardService
         _eventPublisher = eventPublisher;
     }
 
-    public async Task<IReadOnlyList<CardResponse>> GetCardsAsync(string boardId, string columnId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<CardResponse>> GetCardsAsync(string boardId, string columnId, string? currentUserId, CancellationToken cancellationToken = default)
     {
         var cards = await _cardRepository.GetByColumnAsync(boardId, columnId, cancellationToken);
-        return cards.Select(MapCard).ToList();
+        HashSet<string>? likedCardIds = null;
+        if (!string.IsNullOrWhiteSpace(currentUserId))
+        {
+            likedCardIds = await _cardRepository.GetLikedCardIdsAsync(boardId, currentUserId, cards.Select(card => card.Id), cancellationToken);
+        }
+
+        return cards.Select(card => MapCard(card, likedCardIds?.Contains(card.Id) == true)).ToList();
     }
 
     public async Task<CardResponse?> CreateCardAsync(string boardId, string columnId, CardCreateRequest request, CancellationToken cancellationToken = default)
@@ -62,6 +68,55 @@ public class CardService : ICardService
         return MapCard(card);
     }
 
+    public async Task<CardMoveResult> MoveCardAsync(string cardId, CardMoveRequest request, CancellationToken cancellationToken = default)
+    {
+        var moveResult = await _cardRepository.MoveAsync(request.BoardId, cardId, request.ToColumnId, cancellationToken);
+        if (moveResult.Status != CardMoveStatus.Moved)
+        {
+            return moveResult;
+        }
+
+        await _eventPublisher.PublishAsync(new BoardEvent
+        {
+            Type = "card.moved",
+            BoardId = request.BoardId,
+            Data = new CardMovedEventData
+            {
+                CardId = cardId,
+                FromColumnId = moveResult.FromColumnId,
+                ToColumnId = request.ToColumnId
+            },
+            Ts = DateTime.UtcNow
+        }, cancellationToken);
+
+        return moveResult;
+    }
+
+    public async Task<CardLikeResult> LikeCardAsync(string cardId, CardLikeRequest request, string userId, CancellationToken cancellationToken = default)
+    {
+        var likeResult = await _cardRepository.LikeAsync(request.BoardId, cardId, userId, cancellationToken);
+        if (likeResult.Status != CardLikeStatus.Liked)
+        {
+            return likeResult;
+        }
+
+        await _eventPublisher.PublishAsync(new BoardEvent
+        {
+            Type = "card.liked",
+            BoardId = request.BoardId,
+            Data = new CardLikedEventData
+            {
+                CardId = cardId,
+                ColumnId = likeResult.ColumnId,
+                Votes = likeResult.Votes,
+                Delta = 1
+            },
+            Ts = DateTime.UtcNow
+        }, cancellationToken);
+
+        return likeResult;
+    }
+
     public async Task<bool> UpdateCardAsync(string boardId, string cardId, CardUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var card = await _cardRepository.GetByIdAsync(boardId, cardId, cancellationToken);
@@ -71,11 +126,9 @@ public class CardService : ICardService
         }
 
         var previousColumnId = card.ColumnId;
-        var previousVotes = card.Votes;
         var previousText = card.Text;
 
         card.Text = request.Text;
-        card.Votes = request.Votes;
         card.ColumnId = request.ColumnId;
         await _cardRepository.UpdateAsync(card, cancellationToken);
 
@@ -95,24 +148,7 @@ public class CardService : ICardService
             }, cancellationToken);
         }
 
-        if (card.Votes > previousVotes)
-        {
-            await _eventPublisher.PublishAsync(new BoardEvent
-            {
-                Type = "card.liked",
-                BoardId = boardId,
-                Data = new CardLikedEventData
-                {
-                    CardId = card.Id,
-                    ColumnId = card.ColumnId,
-                    Votes = card.Votes,
-                    Delta = card.Votes - previousVotes
-                },
-                Ts = DateTime.UtcNow
-            }, cancellationToken);
-        }
-
-        if (!string.Equals(previousText, card.Text, StringComparison.Ordinal) || card.Votes != previousVotes)
+        if (!string.Equals(previousText, card.Text, StringComparison.Ordinal))
         {
             await _eventPublisher.PublishAsync(new BoardEvent
             {
@@ -159,11 +195,17 @@ public class CardService : ICardService
 
     private static CardResponse MapCard(Card card)
     {
+        return MapCard(card, likedByMe: false);
+    }
+
+    private static CardResponse MapCard(Card card, bool likedByMe)
+    {
         return new CardResponse
         {
             Id = card.Id,
             Text = card.Text,
             Votes = card.Votes,
+            LikedByMe = likedByMe,
             Comments = card.Comments.Select(comment => new CommentResponse
             {
                 Id = comment.Id,

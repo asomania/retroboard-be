@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Retroboard.Api.Api.Models;
 using Retroboard.Api.Application.Interfaces;
 using Retroboard.Api.Application.Models;
@@ -20,7 +21,8 @@ public class CardsController : ControllerBase
     [HttpGet("api/cards")]
     public async Task<ActionResult<IReadOnlyList<CardResponse>>> GetCards([FromQuery] string boardId, [FromQuery] string columnId, CancellationToken cancellationToken)
     {
-        var cards = await _cardService.GetCardsAsync(boardId, columnId, cancellationToken);
+        var currentUserId = ResolveCurrentUserId();
+        var cards = await _cardService.GetCardsAsync(boardId, columnId, currentUserId, cancellationToken);
         return Ok(cards);
     }
 
@@ -56,6 +58,44 @@ public class CardsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("api/cards/{cardId}/move")]
+    public async Task<IActionResult> MoveCard(string cardId, [FromBody] CardMoveRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _cardService.MoveCardAsync(cardId, request, cancellationToken);
+        return result.Status switch
+        {
+            CardMoveStatus.Moved => NoContent(),
+            CardMoveStatus.NoChange => NoContent(),
+            CardMoveStatus.CardNotFound => NotFound(new ApiErrorResponse("Card not found")),
+            CardMoveStatus.TargetColumnNotFound => NotFound(new ApiErrorResponse("Target column not found")),
+            CardMoveStatus.Conflict => Conflict(new ApiErrorResponse("Card already exists in target column")),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiErrorResponse("Unexpected move status"))
+        };
+    }
+
+    [HttpPost("api/cards/{cardId}/like")]
+    public async Task<ActionResult<CardLikeResponse>> LikeCard(string cardId, [FromBody] CardLikeRequest request, CancellationToken cancellationToken)
+    {
+        var userId = ResolveCurrentUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
+        var result = await _cardService.LikeCardAsync(cardId, request, userId, cancellationToken);
+        return result.Status switch
+        {
+            CardLikeStatus.Liked => Ok(new CardLikeResponse
+            {
+                CardId = cardId,
+                Votes = result.Votes
+            }),
+            CardLikeStatus.CardNotFound => NotFound(new ApiErrorResponse("Card not found")),
+            CardLikeStatus.AlreadyLiked => Conflict(new ApiErrorResponse("Already liked")),
+            _ => StatusCode(StatusCodes.Status500InternalServerError, new ApiErrorResponse("Unexpected like status"))
+        };
+    }
+
     [HttpDelete("api/cards/{cardId}")]
     public async Task<IActionResult> DeleteCard(string cardId, [FromQuery] string boardId, CancellationToken cancellationToken)
     {
@@ -66,5 +106,21 @@ public class CardsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    private string? ResolveCurrentUserId()
+    {
+        var claimUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (!string.IsNullOrWhiteSpace(claimUserId))
+        {
+            return claimUserId;
+        }
+
+        if (Request.Headers.TryGetValue("X-User-Id", out var headerUserId) && !string.IsNullOrWhiteSpace(headerUserId))
+        {
+            return headerUserId.ToString();
+        }
+
+        return null;
     }
 }
