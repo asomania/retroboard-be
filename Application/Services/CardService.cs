@@ -15,19 +15,15 @@ public class CardService : ICardService
         _eventPublisher = eventPublisher;
     }
 
-    public async Task<IReadOnlyList<CardResponse>> GetCardsAsync(string boardId, string columnId, string? currentUserId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<CardResponse>> GetCardsAsync(string boardId, string columnId, string currentUserId, CancellationToken cancellationToken = default)
     {
         var cards = await _cardRepository.GetByColumnAsync(boardId, columnId, cancellationToken);
-        HashSet<string>? likedCardIds = null;
-        if (!string.IsNullOrWhiteSpace(currentUserId))
-        {
-            likedCardIds = await _cardRepository.GetLikedCardIdsAsync(boardId, currentUserId, cards.Select(card => card.Id), cancellationToken);
-        }
+        var likedCardIds = await _cardRepository.GetLikedCardIdsAsync(boardId, currentUserId, cards.Select(card => card.Id), cancellationToken);
 
-        return cards.Select(card => MapCard(card, likedCardIds?.Contains(card.Id) == true)).ToList();
+        return cards.Select(card => MapCard(card, likedCardIds.Contains(card.Id))).ToList();
     }
 
-    public async Task<CardResponse?> CreateCardAsync(string boardId, string columnId, CardCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<CardResponse?> CreateCardAsync(string boardId, string columnId, CardCreateRequest request, string currentUserId, CancellationToken cancellationToken = default)
     {
         if (!await _cardRepository.ColumnExistsAsync(boardId, columnId, cancellationToken))
         {
@@ -45,6 +41,8 @@ public class CardService : ICardService
             Id = request.Id,
             Text = request.Text,
             Votes = request.Votes,
+            CreatedByUserId = currentUserId,
+            CreatedByDisplayName = ResolveCardDisplayName(request),
             BoardId = boardId,
             ColumnId = columnId
         };
@@ -60,7 +58,9 @@ public class CardService : ICardService
                 CardId = card.Id,
                 ColumnId = card.ColumnId,
                 Text = card.Text,
-                Votes = card.Votes
+                Votes = card.Votes,
+                CreatedByUserId = card.CreatedByUserId,
+                CreatedByDisplayName = card.CreatedByDisplayName
             },
             Ts = DateTime.UtcNow
         }, cancellationToken);
@@ -159,7 +159,9 @@ public class CardService : ICardService
                     CardId = card.Id,
                     ColumnId = card.ColumnId,
                     Text = card.Text,
-                    Votes = card.Votes
+                    Votes = card.Votes,
+                    CreatedByUserId = card.CreatedByUserId,
+                    CreatedByDisplayName = card.CreatedByDisplayName
                 },
                 Ts = DateTime.UtcNow
             }, cancellationToken);
@@ -205,14 +207,36 @@ public class CardService : ICardService
             Id = card.Id,
             Text = card.Text,
             Votes = card.Votes,
+            CreatedByUserId = card.CreatedByUserId,
+            CreatedByDisplayName = card.CreatedByDisplayName,
             LikedByMe = likedByMe,
             Comments = card.Comments.Select(comment => new CommentResponse
             {
                 Id = comment.Id,
+                CreatedByUserId = comment.CreatedByUserId,
+                CreatedByDisplayName = comment.CreatedByDisplayName,
                 Author = comment.Author,
                 Text = comment.Text,
                 CreatedAt = comment.CreatedAt
             }).ToList()
         };
+    }
+
+    private static string ResolveCardDisplayName(CardCreateRequest request)
+    {
+        return FirstNonEmpty(request.CreatedByDisplayName, request.CreatedByName, request.Author) ?? "Anonymous";
+    }
+
+    private static string? FirstNonEmpty(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
     }
 }

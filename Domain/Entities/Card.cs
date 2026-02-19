@@ -5,6 +5,8 @@ public class Card
     public string Id { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public int Votes { get; set; }
+    public string CreatedByUserId { get; set; } = string.Empty;
+    public string CreatedByDisplayName { get; set; } = string.Empty;
     public string BoardId { get; set; } = string.Empty;
     public string ColumnId { get; set; } = string.Empty;
     public Column? Column { get; set; }

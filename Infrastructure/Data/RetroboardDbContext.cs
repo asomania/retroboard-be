@@ -58,6 +58,8 @@ public class RetroboardDbContext : DbContext
             entity.HasKey(card => new { card.BoardId, card.ColumnId, card.Id });
             entity.Property(card => card.Id).ValueGeneratedNever();
             entity.Property(card => card.Text).IsRequired();
+            entity.Property(card => card.CreatedByUserId).IsRequired();
+            entity.Property(card => card.CreatedByDisplayName).IsRequired();
             entity.Property(card => card.BoardId).IsRequired();
             entity.Property(card => card.ColumnId).IsRequired();
             entity.HasMany(card => card.Comments)
@@ -71,6 +73,8 @@ public class RetroboardDbContext : DbContext
             entity.HasKey(comment => new { comment.BoardId, comment.ColumnId, comment.CardId, comment.Id });
             entity.Property(comment => comment.Id).ValueGeneratedNever();
             entity.Property(comment => comment.Author).IsRequired();
+            entity.Property(comment => comment.CreatedByUserId).IsRequired();
+            entity.Property(comment => comment.CreatedByDisplayName).IsRequired();
             entity.Property(comment => comment.Text).IsRequired();
             entity.Property(comment => comment.CreatedAt).IsRequired();
             entity.Property(comment => comment.BoardId).IsRequired();

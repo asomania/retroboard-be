@@ -33,6 +33,8 @@ public class CardResponse
     public string Id { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public int Votes { get; set; }
+    public string CreatedByUserId { get; set; } = string.Empty;
+    public string CreatedByDisplayName { get; set; } = string.Empty;
     public bool LikedByMe { get; set; }
     public List<CommentResponse> Comments { get; set; } = new();
 }
@@ -46,6 +48,8 @@ public class CardLikeResponse
 public class CommentResponse
 {
     public string Id { get; set; } = string.Empty;
+    public string CreatedByUserId { get; set; } = string.Empty;
+    public string CreatedByDisplayName { get; set; } = string.Empty;
     public string Author { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }

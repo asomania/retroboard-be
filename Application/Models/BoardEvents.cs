@@ -29,6 +29,8 @@ public class CardCreatedEventData
     public string ColumnId { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public int Votes { get; set; }
+    public string CreatedByUserId { get; set; } = string.Empty;
+    public string CreatedByDisplayName { get; set; } = string.Empty;
 }
 
 public class CardDeletedEventData
@@ -42,6 +44,8 @@ public class CommentCreatedEventData
     public string CommentId { get; set; } = string.Empty;
     public string CardId { get; set; } = string.Empty;
     public string ColumnId { get; set; } = string.Empty;
+    public string CreatedByUserId { get; set; } = string.Empty;
+    public string CreatedByDisplayName { get; set; } = string.Empty;
     public string Author { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
@@ -53,6 +57,8 @@ public class CardUpdatedEventData
     public string ColumnId { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
     public int Votes { get; set; }
+    public string CreatedByUserId { get; set; } = string.Empty;
+    public string CreatedByDisplayName { get; set; } = string.Empty;
 }
 
 public class CommentDeletedEventData

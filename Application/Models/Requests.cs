@@ -67,6 +67,12 @@ public class CardCreateRequest
     public string Text { get; set; } = string.Empty;
 
     public int Votes { get; set; }
+
+    public string? CreatedByDisplayName { get; set; }
+
+    public string? CreatedByName { get; set; }
+
+    public string? Author { get; set; }
 }
 
 public class CardUpdateRequest
@@ -110,8 +116,9 @@ public class CommentCreateRequest
     [Required]
     public string Id { get; set; } = string.Empty;
 
-    [Required]
-    public string Author { get; set; } = string.Empty;
+    public string? CreatedByDisplayName { get; set; }
+
+    public string? Author { get; set; }
 
     [Required]
     public string Text { get; set; } = string.Empty;

@@ -21,13 +21,15 @@ public class CommentService : ICommentService
         return comments.Select(comment => new CommentResponse
         {
             Id = comment.Id,
+            CreatedByUserId = comment.CreatedByUserId,
+            CreatedByDisplayName = comment.CreatedByDisplayName,
             Author = comment.Author,
             Text = comment.Text,
             CreatedAt = comment.CreatedAt
         }).ToList();
     }
 
-    public async Task<CommentResponse?> CreateCommentAsync(string boardId, string columnId, string cardId, CommentCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<CommentResponse?> CreateCommentAsync(string boardId, string columnId, string cardId, CommentCreateRequest request, string currentUserId, CancellationToken cancellationToken = default)
     {
         if (!await _commentRepository.CardExistsAsync(boardId, columnId, cardId, cancellationToken))
         {
@@ -40,10 +42,14 @@ public class CommentService : ICommentService
             throw new InvalidOperationException("Comment already exists.");
         }
 
+        var createdByDisplayName = ResolveCommentDisplayName(request);
+
         var comment = new Comment
         {
             Id = request.Id,
-            Author = request.Author,
+            Author = createdByDisplayName,
+            CreatedByUserId = currentUserId,
+            CreatedByDisplayName = createdByDisplayName,
             Text = request.Text,
             CreatedAt = request.CreatedAt,
             BoardId = boardId,
@@ -62,6 +68,8 @@ public class CommentService : ICommentService
                 CommentId = comment.Id,
                 CardId = comment.CardId,
                 ColumnId = comment.ColumnId,
+                CreatedByUserId = comment.CreatedByUserId,
+                CreatedByDisplayName = comment.CreatedByDisplayName,
                 Author = comment.Author,
                 Text = comment.Text,
                 CreatedAt = comment.CreatedAt
@@ -72,6 +80,8 @@ public class CommentService : ICommentService
         return new CommentResponse
         {
             Id = comment.Id,
+            CreatedByUserId = comment.CreatedByUserId,
+            CreatedByDisplayName = comment.CreatedByDisplayName,
             Author = comment.Author,
             Text = comment.Text,
             CreatedAt = comment.CreatedAt
@@ -102,5 +112,20 @@ public class CommentService : ICommentService
         }, cancellationToken);
 
         return true;
+    }
+
+    private static string ResolveCommentDisplayName(CommentCreateRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.CreatedByDisplayName))
+        {
+            return request.CreatedByDisplayName.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Author))
+        {
+            return request.Author.Trim();
+        }
+
+        return "Anonymous";
     }
 }

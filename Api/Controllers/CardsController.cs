@@ -21,7 +21,11 @@ public class CardsController : ControllerBase
     [HttpGet("api/cards")]
     public async Task<ActionResult<IReadOnlyList<CardResponse>>> GetCards([FromQuery] string boardId, [FromQuery] string columnId, CancellationToken cancellationToken)
     {
-        var currentUserId = ResolveCurrentUserId();
+        if (!TryResolveCurrentUserId(out var currentUserId))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         var cards = await _cardService.GetCardsAsync(boardId, columnId, currentUserId, cancellationToken);
         return Ok(cards);
     }
@@ -29,9 +33,14 @@ public class CardsController : ControllerBase
     [HttpPost("api/cards")]
     public async Task<ActionResult<CardResponse>> CreateCard([FromBody] CardCreateRequest request, CancellationToken cancellationToken)
     {
+        if (!TryResolveCurrentUserId(out var currentUserId))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         try
         {
-            var card = await _cardService.CreateCardAsync(request.BoardId, request.ColumnId, request, cancellationToken);
+            var card = await _cardService.CreateCardAsync(request.BoardId, request.ColumnId, request, currentUserId, cancellationToken);
             if (card is null)
             {
                 return NotFound(new ApiErrorResponse("Column not found"));
@@ -49,6 +58,11 @@ public class CardsController : ControllerBase
     [HttpPut("api/cards/{cardId}")]
     public async Task<IActionResult> UpdateCard(string cardId, [FromBody] CardUpdateRequest request, CancellationToken cancellationToken)
     {
+        if (!TryResolveCurrentUserId(out _))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         var updated = await _cardService.UpdateCardAsync(request.BoardId, cardId, request, cancellationToken);
         if (!updated)
         {
@@ -61,6 +75,11 @@ public class CardsController : ControllerBase
     [HttpPost("api/cards/{cardId}/move")]
     public async Task<IActionResult> MoveCard(string cardId, [FromBody] CardMoveRequest request, CancellationToken cancellationToken)
     {
+        if (!TryResolveCurrentUserId(out _))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         var result = await _cardService.MoveCardAsync(cardId, request, cancellationToken);
         return result.Status switch
         {
@@ -76,8 +95,7 @@ public class CardsController : ControllerBase
     [HttpPost("api/cards/{cardId}/like")]
     public async Task<ActionResult<CardLikeResponse>> LikeCard(string cardId, [FromBody] CardLikeRequest request, CancellationToken cancellationToken)
     {
-        var userId = ResolveCurrentUserId();
-        if (string.IsNullOrWhiteSpace(userId))
+        if (!TryResolveCurrentUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("User identity is required"));
         }
@@ -99,6 +117,11 @@ public class CardsController : ControllerBase
     [HttpDelete("api/cards/{cardId}")]
     public async Task<IActionResult> DeleteCard(string cardId, [FromQuery] string boardId, CancellationToken cancellationToken)
     {
+        if (!TryResolveCurrentUserId(out _))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         var deleted = await _cardService.DeleteCardAsync(boardId, cardId, cancellationToken);
         if (!deleted)
         {
@@ -108,19 +131,22 @@ public class CardsController : ControllerBase
         return NoContent();
     }
 
-    private string? ResolveCurrentUserId()
+    private bool TryResolveCurrentUserId(out string userId)
     {
         var claimUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (!string.IsNullOrWhiteSpace(claimUserId))
         {
-            return claimUserId;
+            userId = claimUserId;
+            return true;
         }
 
         if (Request.Headers.TryGetValue("X-User-Id", out var headerUserId) && !string.IsNullOrWhiteSpace(headerUserId))
         {
-            return headerUserId.ToString();
+            userId = headerUserId.ToString();
+            return true;
         }
 
-        return null;
+        userId = string.Empty;
+        return false;
     }
 }

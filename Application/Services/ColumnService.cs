@@ -79,9 +79,13 @@ public class ColumnService : IColumnService
                 Id = card.Id,
                 Text = card.Text,
                 Votes = card.Votes,
+                CreatedByUserId = card.CreatedByUserId,
+                CreatedByDisplayName = card.CreatedByDisplayName,
                 Comments = card.Comments.Select(comment => new CommentResponse
                 {
                     Id = comment.Id,
+                    CreatedByUserId = comment.CreatedByUserId,
+                    CreatedByDisplayName = comment.CreatedByDisplayName,
                     Author = comment.Author,
                     Text = comment.Text,
                     CreatedAt = comment.CreatedAt

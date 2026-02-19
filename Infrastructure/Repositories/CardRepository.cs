@@ -181,6 +181,8 @@ public class CardRepository : ICardRepository
             Id = sourceCard.Id,
             Text = sourceCard.Text,
             Votes = sourceCard.Votes,
+            CreatedByUserId = sourceCard.CreatedByUserId,
+            CreatedByDisplayName = sourceCard.CreatedByDisplayName,
             BoardId = sourceCard.BoardId,
             ColumnId = toColumnId
         };
@@ -192,6 +194,8 @@ public class CardRepository : ICardRepository
             {
                 Id = comment.Id,
                 Author = comment.Author,
+                CreatedByUserId = comment.CreatedByUserId,
+                CreatedByDisplayName = comment.CreatedByDisplayName,
                 Text = comment.Text,
                 CreatedAt = comment.CreatedAt,
                 BoardId = comment.BoardId,

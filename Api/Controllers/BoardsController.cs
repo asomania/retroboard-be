@@ -22,6 +22,11 @@ public class BoardsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<BoardSummaryResponse>>> GetBoards(CancellationToken cancellationToken)
     {
+        if (!TryResolveCurrentUserId(out _))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         var boards = await _boardService.GetBoardsAsync(cancellationToken);
         return Ok(boards);
     }
@@ -29,6 +34,11 @@ public class BoardsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<BoardDetailResponse>> GetBoardById(string id, CancellationToken cancellationToken)
     {
+        if (!TryResolveCurrentUserId(out _))
+        {
+            return Unauthorized(new ApiErrorResponse("User identity is required"));
+        }
+
         var board = await _boardService.GetBoardByIdAsync(id, cancellationToken);
         if (board is null)
         {
@@ -41,8 +51,7 @@ public class BoardsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<BoardDetailResponse>> CreateBoard([FromBody] BoardCreateRequest request, CancellationToken cancellationToken)
     {
-        var currentUserId = ResolveCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
+        if (!TryResolveCurrentUserId(out var currentUserId))
         {
             return Unauthorized(new ApiErrorResponse("User identity is required"));
         }
@@ -62,8 +71,7 @@ public class BoardsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateBoard(string id, [FromBody] BoardUpdateRequest request, CancellationToken cancellationToken)
     {
-        var currentUserId = ResolveCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
+        if (!TryResolveCurrentUserId(out var currentUserId))
         {
             return Unauthorized(new ApiErrorResponse("User identity is required"));
         }
@@ -79,7 +87,7 @@ public class BoardsController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized board update attempt. BoardId: {BoardId}, UserId: {UserId}", id, currentUserId);
-            return StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse("Only board owner can update board settings"));
+            return StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse("Bu board ayarlarını sadece oluşturan kişi değiştirebilir."));
         }
 
         return NoContent();
@@ -88,8 +96,7 @@ public class BoardsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteBoard(string id, CancellationToken cancellationToken)
     {
-        var currentUserId = ResolveCurrentUserId();
-        if (string.IsNullOrWhiteSpace(currentUserId))
+        if (!TryResolveCurrentUserId(out var currentUserId))
         {
             return Unauthorized(new ApiErrorResponse("User identity is required"));
         }
@@ -105,25 +112,28 @@ public class BoardsController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized board delete attempt. BoardId: {BoardId}, UserId: {UserId}", id, currentUserId);
-            return StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse("Only board owner can delete board"));
+            return StatusCode(StatusCodes.Status403Forbidden, new ApiErrorResponse("Bu board ayarlarını sadece oluşturan kişi değiştirebilir."));
         }
 
         return NoContent();
     }
 
-    private string? ResolveCurrentUserId()
+    private bool TryResolveCurrentUserId(out string userId)
     {
         var claimUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (!string.IsNullOrWhiteSpace(claimUserId))
         {
-            return claimUserId;
+            userId = claimUserId;
+            return true;
         }
 
         if (Request.Headers.TryGetValue("X-User-Id", out var headerUserId) && !string.IsNullOrWhiteSpace(headerUserId))
         {
-            return headerUserId.ToString();
+            userId = headerUserId.ToString();
+            return true;
         }
 
-        return null;
+        userId = string.Empty;
+        return false;
     }
 }
